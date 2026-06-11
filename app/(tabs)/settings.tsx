@@ -1,4 +1,5 @@
 import { useClerk, useUser } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
@@ -14,6 +15,7 @@ const SafeAreaView = styled(RNSafeAreaView);
 const Settings = () => {
 	const { signOut } = useClerk();
 	const { user } = useUser();
+	const posthog = usePostHog();
 
 	const initials =
 		[user?.firstName, user?.lastName]
@@ -128,7 +130,11 @@ const Settings = () => {
 				<Pressable
 					className="items-center rounded-2xl bg-accent py-4"
 					style={({ pressed }) => pressed && { opacity: 0.7 }}
-					onPress={() => signOut()}
+					onPress={() => {
+						posthog.capture("user_signed_out");
+						posthog.reset();
+						signOut();
+					}}
 				>
 					<Text className="text-base font-sans-bold text-primary">
 						Sign out

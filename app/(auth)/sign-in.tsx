@@ -1,6 +1,7 @@
 import { useSignIn } from "@clerk/expo";
 import { Link } from "expo-router";
 import { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import { Text, View } from "react-native";
 
 import AuthButton from "@/components/auth/AuthButton";
@@ -26,6 +27,7 @@ const validatePassword = (password: string): string | undefined => {
 
 export default function SignIn() {
 	const { signIn, errors, fetchStatus } = useSignIn();
+	const posthog = usePostHog();
 
 
 	const [email, setEmail] = useState("");
@@ -115,6 +117,13 @@ export default function SignIn() {
 				// declaratively redirects to /(tabs) via <Redirect href="/(tabs)" />
 			},
 		});
+
+		const userId = signIn.createdSessionId ?? signIn.identifier ?? email.trim();
+		posthog.identify(userId, {
+			$set: { email: email.trim() },
+			$set_once: { first_sign_in_date: new Date().toISOString() },
+		});
+		posthog.capture("user_signed_in", { method: "email" });
 	};
 
 	// ── MFA / Client trust screen ─────────────────────────────────────────────
