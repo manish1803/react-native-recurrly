@@ -1,5 +1,5 @@
 import { useSignUp } from "@clerk/expo";
-import { type Href, Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -9,8 +9,7 @@ import AuthField from "@/components/auth/AuthField";
 import AuthScreen from "@/components/auth/AuthScreen";
 import LogoBrand from "@/components/auth/LogoBrand";
 
-// ─── Validation ──────────────────────────────────────────────────────────────
-
+// validation email
 const validateEmail = (email: string): string | undefined => {
 	if (!email.trim()) return "Email is required";
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,7 +33,6 @@ const validateConfirmPassword = (
 
 export default function SignUp() {
 	const { signUp, errors, fetchStatus } = useSignUp();
-	const router = useRouter();
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -79,7 +77,10 @@ export default function SignUp() {
 
 		// Trigger email verification
 		if (!error) {
-			await signUp.verifications.sendEmailCode();
+			const { error: verifyError } = await signUp.verifications.sendEmailCode();
+			if (verifyError) {
+				console.error("Email verification send error:", JSON.stringify(verifyError, null, 2));
+			}
 		}
 	};
 
@@ -92,20 +93,19 @@ export default function SignUp() {
 		}
 		setFieldErrors({});
 
-		await signUp.verifications.verifyEmailCode({ code });
+		const { error } = await signUp.verifications.verifyEmailCode({ code });
+		if (error) {
+			console.error("Email verify error:", JSON.stringify(error, null, 2));
+			return;
+		}
 
 		if (signUp.status === "complete") {
 			await signUp.finalize({
-				navigate: ({ session, decorateUrl }) => {
+				navigate: ({ session }) => {
 					if (session?.currentTask) {
 						console.log("Session task pending:", session.currentTask);
 						return;
 					}
-					const url = decorateUrl("/");
-					if (url.startsWith("http")) {
-						return;
-					}
-					router.replace(url as Href);
 				},
 			});
 		} else {
@@ -113,7 +113,7 @@ export default function SignUp() {
 		}
 	};
 
-	// ── Email verification screen ─────────────────────────────────────────────
+	// ── Email verification screen ────
 
 	if (
 		signUp.status === "missing_requirements" &&
@@ -161,7 +161,12 @@ export default function SignUp() {
 
 						<AuthButton
 							label="Resend code"
-							onPress={() => signUp.verifications.sendEmailCode()}
+							onPress={async () => {
+								const { error } = await signUp.verifications.sendEmailCode();
+								if (error) {
+									console.error("Resend error:", JSON.stringify(error, null, 2));
+								}
+							}}
 							variant="secondary"
 							disabled={isLoading}
 						/>

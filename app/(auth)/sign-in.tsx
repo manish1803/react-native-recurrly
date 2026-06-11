@@ -1,5 +1,5 @@
 import { useSignIn } from "@clerk/expo";
-import { type Href, Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
@@ -26,7 +26,7 @@ const validatePassword = (password: string): string | undefined => {
 
 export default function SignIn() {
 	const { signIn, errors, fetchStatus } = useSignIn();
-	const router = useRouter();
+
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -73,7 +73,10 @@ export default function SignIn() {
 				(f) => f.strategy === "email_code",
 			);
 			if (emailCodeFactor) {
-				await signIn.mfa.sendEmailCode();
+				const { error: mfaError } = await signIn.mfa.sendEmailCode();
+				if (mfaError) {
+					console.error("Error sending MFA code: ", JSON.stringify(mfaError, null, 2));
+				}
 			}
 		}
 	};
@@ -87,7 +90,11 @@ export default function SignIn() {
 		}
 		setFieldErrors({});
 
-		await signIn.mfa.verifyEmailCode({ code });
+		const { error } = await signIn.mfa.verifyEmailCode({ code });
+		if (error) {
+			console.error("Error verifying MFA code: ", JSON.stringify(error, null, 2));
+			return;
+		}
 
 		if (signIn.status === "complete") {
 			await finalizeSignIn();
@@ -98,17 +105,14 @@ export default function SignIn() {
 
 	const finalizeSignIn = async () => {
 		await signIn.finalize({
-			navigate: ({ session, decorateUrl }) => {
+			navigate: ({ session }) => {
 				if (session?.currentTask) {
 					console.log("Session task pending:", session.currentTask);
 					return;
 				}
-				const url = decorateUrl("/");
-				if (url.startsWith("http")) {
-					// web fallback — not expected in native
-					return;
-				}
-				router.replace(url as Href);
+				// No imperative navigation needed — once finalize() sets the Clerk
+				// session, useAuth().isSignedIn becomes true and (auth)/_layout.tsx
+				// declaratively redirects to /(tabs) via <Redirect href="/(tabs)" />
 			},
 		});
 	};

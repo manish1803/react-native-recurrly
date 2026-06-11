@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Redirect, Tabs } from "expo-router";
-import { Image, View } from "react-native";
+import { ActivityIndicator, Image, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { tabs } from "@/constants/data";
@@ -23,7 +23,20 @@ const TabLayout = () => {
 	const {isSignedIn, isLoaded} = useAuth();
 	const insets = useSafeAreaInsets();
 
-	if(!isLoaded) return null;
+	if (!isLoaded) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					backgroundColor: colors.background,
+					alignItems: "center",
+					justifyContent: "center",
+				}}
+			>
+				<ActivityIndicator size="large" color={colors.accent} />
+			</View>
+		);
+	}
 
 	if(!isSignedIn) {
 		return <Redirect href={"/(auth)/sign-in"} />
