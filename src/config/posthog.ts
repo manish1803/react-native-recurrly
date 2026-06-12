@@ -30,6 +30,4 @@ export const posthog = new PostHog(apiKey || "placeholder_key", {
   fetchRetryDelay: 3000,
 });
 
-if (__DEV__) {
-  posthog.debug();
-}
+

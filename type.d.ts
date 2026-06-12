@@ -15,6 +15,13 @@ declare global {
 	interface Subscription {
 		id: string;
 		icon: ImageSourcePropType;
+		/**
+		 * When the subscription doesn't have a matching brand icon, this carries
+		 * the first letter of the service name and a deterministic background color.
+		 * SubscriptionCard renders an initial-avatar View instead of an Image when
+		 * this field is present.
+		 */
+		iconInitial?: { letter: string; bgColor: string };
 		name: string;
 		plan?: string;
 		category?: string;

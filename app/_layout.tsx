@@ -1,11 +1,16 @@
 import "@/global.css";
+import { posthog } from "@/src/config/posthog";
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
-import { useEffect, useRef } from "react";
+import {
+	SplashScreen,
+	Stack,
+	useGlobalSearchParams,
+	usePathname,
+} from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
-import { posthog } from "@/src/config/posthog";
+import { useEffect, useRef } from "react";
 
 // Prevent the splash screen from auto-hiding before fonts are loaded
 SplashScreen.preventAutoHideAsync();
@@ -35,7 +40,11 @@ if (!publishableKey) {
 
 	useEffect(() => {
 		if (fontsLoaded && authLoaded) {
-			SplashScreen.hideAsync();
+			// expo-splash-screen v0.31+ (Expo SDK 54) changed the native API: the
+			// view controller that owns the splash screen may already be gone by the
+			// time this runs (e.g. on a fast second render). Wrapping in try/catch
+			// is the Expo-recommended approach to silence the unregistered-vc error.
+			SplashScreen.hideAsync().catch(() => {});
 		}
 	}, [fontsLoaded, authLoaded]);
 

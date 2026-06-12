@@ -4,13 +4,47 @@ import {
 	formatSubscriptionDateTime,
 } from "@/lib/utils";
 import clsx from "clsx";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ServiceIcon } from "@/components/ServiceIcon";
+
+// ─── Styles defined BEFORE the component (avoids "styles doesn't exist" TDZ crash) ─
+
+const styles = StyleSheet.create({
+	/**
+	 * sub-icon View: size-16 = 64px, p-2 = 8px padding → inner content area 48px.
+	 * Using 44×44 gives a slight visual margin from the border.
+	 */
+	iconImage: {
+		width: 44,
+		height: 44,
+	},
+	/**
+	 * Initial avatar — fills the same 44×44 slot as the brand icon.
+	 * Rounded corners + white bold letter centred inside.
+	 */
+	initialAvatar: {
+		width: 44,
+		height: 44,
+		borderRadius: 10,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	initialLetter: {
+		color: "#ffffff",
+		fontSize: 20,
+		fontWeight: "700",
+		lineHeight: 24,
+	},
+});
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const SubscriptionCard = ({
 	name,
 	price,
 	currency,
 	icon,
+	iconInitial,
 	billing,
 	paymentMethod,
 	color,
@@ -30,7 +64,31 @@ const SubscriptionCard = ({
 		>
 			<View className="sub-head">
 				<View className="sub-main">
-					<Image source={icon} className="sub-icon" />
+					{/*
+					 * If the subscription has no brand icon, render a coloured initial-avatar
+					 * View (first letter of the service name on a deterministic bg color).
+					 * Otherwise render the brand icon via expo-image.
+					 */}
+					<View className="sub-icon">
+						{iconInitial ? (
+							<View
+								style={[
+									styles.initialAvatar,
+									{ backgroundColor: iconInitial.bgColor },
+								]}
+							>
+								<Text style={styles.initialLetter}>
+									{iconInitial.letter}
+								</Text>
+							</View>
+						) : (
+							<ServiceIcon
+								source={icon}
+								size={styles.iconImage.width}
+							/>
+						)}
+					</View>
+
 					<View className="sub-copy">
 						<Text numberOfLines={1} className="sub-title">
 							{name}
