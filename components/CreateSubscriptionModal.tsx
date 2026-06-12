@@ -14,13 +14,12 @@ import {
 	View,
 } from "react-native";
 
+import { ServiceIcon } from "@/components/ServiceIcon";
 import { icons } from "@/constants/icons";
 import { POPULAR_SERVICES, type ServiceEntry } from "@/constants/serviceLogos";
-import { ServiceIcon } from "@/components/ServiceIcon";
-import { getIconInitial } from "@/lib/utils";
 import { colors } from "@/constants/theme";
-
-// ─── Icon helpers ─────────────────────────────────────────────────────────────
+import { getIconInitial } from "@/lib/utils";
+import { posthog } from "@/src/config/posthog";
 
 /** The generic fallback entry ("Other") */
 const DEFAULT_ENTRY: ServiceEntry = POPULAR_SERVICES[POPULAR_SERVICES.length - 1];
@@ -47,8 +46,6 @@ function autoMatchEntry(name: string): ServiceEntry | null {
 	return null;
 }
 
-// ─── Category & frequency config ─────────────────────────────────────────────
-
 const CATEGORIES = [
 	"Entertainment",
 	"AI Tools",
@@ -74,15 +71,11 @@ const CATEGORY_COLORS: Record<string, string> = {
 	Other:         "#f6eecf",
 };
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface CreateSubscriptionModalProps {
 	visible: boolean;
 	onClose: () => void;
 	onSubmit: (subscription: Subscription) => void;
 }
-
-// ─── Icon picker grid ─────────────────────────────────────────────────────────
 
 interface IconPickerGridProps {
 	selected: ServiceEntry;
@@ -118,8 +111,6 @@ const IconPickerGrid = ({ selected, onSelect }: IconPickerGridProps) => (
 	</View>
 );
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 const CreateSubscriptionModal = ({
 	visible,
 	onClose,
@@ -132,8 +123,6 @@ const CreateSubscriptionModal = ({
 	const [selectedEntry, setSelectedEntry] = useState<ServiceEntry>(DEFAULT_ENTRY);
 	const [showIconPicker, setShowIconPicker] = useState(false);
 	const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
-
-	// ── Helpers ────────────────────────────────────────────────────────────────
 
 	const handleNameChange = (text: string) => {
 		setName(text);
@@ -198,15 +187,20 @@ const CreateSubscriptionModal = ({
 			).toISOString(),
 			color: CATEGORY_COLORS[cat] ?? "#f6eecf",
 		};
-
 		onSubmit(subscription);
+
+		posthog.capture("subscription_created", {
+			subscription_name: name.trim(),
+			subscription_price: parseFloat(price),
+			subscription_frequency: frequency,
+			subscription_category: cat,
+		});
+
 		resetForm();
 		onClose();
 	};
 
 	const isSubmittable = name.trim().length > 0 && price.trim().length > 0;
-
-	// ── Render ─────────────────────────────────────────────────────────────────
 
 	return (
 		<Modal
@@ -394,8 +388,6 @@ const CreateSubscriptionModal = ({
 		</Modal>
 	);
 };
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
 	overlay: {
