@@ -30,5 +30,5 @@ export default function RootIndex() {
 		return <Redirect href="/(tabs)" />;
 	}
 
-	return <Redirect href="/(auth)/sign-in" />;
+	return <Redirect href="/onboarding" />;
 }

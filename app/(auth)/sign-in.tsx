@@ -1,16 +1,21 @@
-import { useSignIn } from "@clerk/expo";
+import { useSignIn, useSSO, useClerk } from "@clerk/expo";
 import { Link } from "expo-router";
-import { useState } from "react";
-import { Text, View } from "react-native";
+import { useState, useCallback } from "react";
+import { usePostHog } from "posthog-react-native";
+import { Pressable, Text, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 
 import AuthButton from "@/components/auth/AuthButton";
 import AuthCard from "@/components/auth/AuthCard";
 import AuthField from "@/components/auth/AuthField";
 import AuthScreen from "@/components/auth/AuthScreen";
+import GoogleIcon from "@/components/icons/GoogleIcon";
 import LogoBrand from "@/components/auth/LogoBrand";
 
-// ─── Validation ──────────────────────────────────────────────────────────────
+WebBrowser.maybeCompleteAuthSession();
 
+//  Validation
 const validateEmail = (email: string): string | undefined => {
 	if (!email.trim()) return "Email is required";
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,10 +27,35 @@ const validatePassword = (password: string): string | undefined => {
 	if (password.length < 8) return "Password must be at least 8 characters";
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
+// Component
 export default function SignIn() {
 	const { signIn, errors, fetchStatus } = useSignIn();
+	const clerk = useClerk();
+	const posthog = usePostHog();
+	const { startSSOFlow } = useSSO();
+
+	const handleGoogleSignIn = useCallback(async () => {
+		try {
+			const { createdSessionId, setActive } = await startSSOFlow({
+				strategy: "oauth_google",
+				redirectUrl: Linking.createURL("/(tabs)", { scheme: "reactnativerecurrly" }),
+			});
+
+			if (createdSessionId && setActive) {
+				await setActive({ session: createdSessionId });
+				const session = clerk.client.sessions.find((s) => s.id === createdSessionId);
+				const userId = session?.user?.id || createdSessionId;
+				const userEmail = session?.user?.primaryEmailAddress?.emailAddress || "";
+				posthog.identify(userId, {
+					$set: { email: userEmail },
+					$set_once: { first_sign_in_date: new Date().toISOString() },
+				});
+				posthog.capture("user_signed_in", { method: "google" });
+			}
+		} catch (err) {
+			console.error("OAuth error:", err);
+		}
+	}, [startSSOFlow, posthog, clerk.client.sessions]);
 
 
 	const [email, setEmail] = useState("");
@@ -39,8 +69,7 @@ export default function SignIn() {
 
 	const isLoading = fetchStatus === "fetching";
 
-	// ── Sign-in submit ────────────────────────────────────────────────────────
-
+	// Sign-in submit
 	const handleSubmit = async () => {
 		// Client-side validation
 		const emailErr = validateEmail(email);
@@ -81,8 +110,7 @@ export default function SignIn() {
 		}
 	};
 
-	// ── MFA verify ───────────────────────────────────────────────────────────
-
+	// MFA verify
 	const handleVerify = async () => {
 		if (!code.trim()) {
 			setFieldErrors({ code: "Verification code is required" });
@@ -101,8 +129,7 @@ export default function SignIn() {
 		}
 	};
 
-	// ── Finalize & navigate ───────────────────────────────────────────────────
-
+	// Finalize & navigate
 	const finalizeSignIn = async () => {
 		await signIn.finalize({
 			navigate: ({ session }) => {
@@ -115,10 +142,18 @@ export default function SignIn() {
 				// declaratively redirects to /(tabs) via <Redirect href="/(tabs)" />
 			},
 		});
+
+		const session = clerk.client.sessions.find((s) => s.id === signIn.createdSessionId);
+		const userId = session?.user?.id || signIn.createdSessionId || email.trim();
+		const userEmail = session?.user?.primaryEmailAddress?.emailAddress || email.trim();
+		posthog.identify(userId, {
+			$set: { email: userEmail },
+			$set_once: { first_sign_in_date: new Date().toISOString() },
+		});
+		posthog.capture("user_signed_in", { method: "email" });
 	};
 
-	// ── MFA / Client trust screen ─────────────────────────────────────────────
-
+	// MFA / Client trust screen
 	if (
 		signIn.status === "needs_client_trust" ||
 		signIn.status === "needs_second_factor"
@@ -176,8 +211,7 @@ export default function SignIn() {
 		);
 	}
 
-	// ── Main sign-in screen ───────────────────────────────────────────────────
-
+	// Main sign-in screen
 	return (
 		<AuthScreen>
 			<LogoBrand />
@@ -233,6 +267,25 @@ export default function SignIn() {
 						disabled={!email || !password || isLoading}
 						loading={isLoading}
 					/>
+
+					{/* OAuth Divider */}
+					<View className="auth-divider-row">
+						<View className="auth-divider-line" />
+						<Text className="auth-divider-text">or</Text>
+						<View className="auth-divider-line" />
+					</View>
+
+					{/* Google Sign-In */}
+					<Pressable
+						className="flex-row items-center justify-center rounded-2xl border border-border bg-background py-4"
+						style={({ pressed }) => pressed && { opacity: 0.8 }}
+						onPress={handleGoogleSignIn}
+					>
+						<GoogleIcon />
+						<Text className="ml-3 text-base font-sans-bold text-primary">
+							Continue with Google
+						</Text>
+					</Pressable>
 				</View>
 			</AuthCard>
 

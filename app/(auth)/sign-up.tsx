@@ -1,13 +1,19 @@
-import { useSignUp } from "@clerk/expo";
+import { useSignUp, useSSO, useClerk } from "@clerk/expo";
 import { Link } from "expo-router";
-import { useState } from "react";
-import { Text, View } from "react-native";
+import { useState, useCallback } from "react";
+import { usePostHog } from "posthog-react-native";
+import { Pressable, Text, View } from "react-native";	
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 
 import AuthButton from "@/components/auth/AuthButton";
 import AuthCard from "@/components/auth/AuthCard";
 import AuthField from "@/components/auth/AuthField";
 import AuthScreen from "@/components/auth/AuthScreen";
 import LogoBrand from "@/components/auth/LogoBrand";
+import GoogleIcon from "@/components/icons/GoogleIcon";
+
+WebBrowser.maybeCompleteAuthSession();
 
 // validation email
 const validateEmail = (email: string): string | undefined => {
@@ -29,10 +35,34 @@ const validateConfirmPassword = (
 	if (password !== confirm) return "Passwords don't match";
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
 export default function SignUp() {
 	const { signUp, errors, fetchStatus } = useSignUp();
+	const clerk = useClerk();
+	const posthog = usePostHog();
+	const { startSSOFlow } = useSSO();
+
+	const handleGoogleSignUp = useCallback(async () => {
+		try {
+			const { createdSessionId, setActive } = await startSSOFlow({
+				strategy: "oauth_google",
+				redirectUrl: Linking.createURL("/(tabs)", { scheme: "reactnativerecurrly" }),
+			});
+
+			if (createdSessionId && setActive) {
+				await setActive({ session: createdSessionId });
+				const session = clerk.client.sessions.find((s) => s.id === createdSessionId);
+				const userId = session?.user?.id || createdSessionId;
+				const userEmail = session?.user?.primaryEmailAddress?.emailAddress || "";
+				posthog.identify(userId, {
+					$set: { email: userEmail },
+					$set_once: { first_sign_up_date: new Date().toISOString() },
+				});
+				posthog.capture("user_signed_up", { method: "google" });
+			}
+		} catch (err) {
+			console.error("OAuth error:", err);
+		}
+	}, [startSSOFlow, posthog, clerk.client.sessions]);
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -47,8 +77,7 @@ export default function SignUp() {
 
 	const isLoading = fetchStatus === "fetching";
 
-	// ── Sign-up submit ────────────────────────────────────────────────────────
-
+	// Sign-up submit
 	const handleSubmit = async () => {
 		// Client-side validation
 		const emailErr = validateEmail(email);
@@ -84,8 +113,7 @@ export default function SignUp() {
 		}
 	};
 
-	// ── Email verification ────────────────────────────────────────────────────
-
+	// Email verification
 	const handleVerify = async () => {
 		if (!code.trim()) {
 			setFieldErrors({ code: "Verification code is required" });
@@ -108,13 +136,19 @@ export default function SignUp() {
 					}
 				},
 			});
+
+			const userId = signUp.createdUserId ?? email.trim();
+			posthog.identify(userId, {
+				$set: { email: email.trim() },
+				$set_once: { first_sign_up_date: new Date().toISOString() },
+			});
+			posthog.capture("user_signed_up", { method: "email" });
 		} else {
 			console.error("Sign-up not complete after verify:", signUp.status);
 		}
 	};
 
-	// ── Email verification screen ────
-
+	// Email verification screen
 	if (
 		signUp.status === "missing_requirements" &&
 		signUp.unverifiedFields?.includes("email_address") &&
@@ -176,8 +210,7 @@ export default function SignUp() {
 		);
 	}
 
-	// ── Main sign-up screen ───────────────────────────────────────────────────
-
+	// Main sign-up screen
 	return (
 		<AuthScreen>
 			<LogoBrand />
@@ -247,6 +280,25 @@ export default function SignUp() {
 						disabled={!email || !password || !confirmPassword || isLoading}
 						loading={isLoading}
 					/>
+
+					{/* OAuth Divider */}
+					<View className="auth-divider-row">
+						<View className="auth-divider-line" />
+						<Text className="auth-divider-text">or</Text>
+						<View className="auth-divider-line" />
+					</View>
+
+					{/* Google Sign-Up */}
+					<Pressable
+						className="flex-row items-center justify-center rounded-2xl border border-border bg-background py-4"
+						style={({ pressed }) => pressed && { opacity: 0.8 }}
+						onPress={handleGoogleSignUp}
+					>
+						<GoogleIcon />
+						<Text className="ml-3 text-base font-sans-bold text-primary">
+							Continue with Google
+						</Text>
+					</Pressable>
 				</View>
 			</AuthCard>
 

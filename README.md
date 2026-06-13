@@ -1,51 +1,69 @@
-# Welcome to your Expo app 👋
+# Recurrly Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A vibrant, premium, and glassmorphic React Native mobile application built on Expo SDK 54. Recurrly helps users track, manage, and analyze recurring subscriptions with fluid micro-animations, unified brand iconography, and Clerk-managed multi-factor authentication.
 
-## Get started
+---
 
-1. Install dependencies
+## Key Features
 
+- **Spend Overview Dashboard**: Features a premium, credit-card styled metallic shimmer interface detailing total monthly spends and active subscription counts.
+- **Dynamic Brand Logo Engine**: Unified icon renderer (`ServiceIcon`) utilizing a logo.dev API with automatic CDN fallbacks (Simple Icons jsDelivr) and deterministic, colored initial-letter avatars.
+- **Detailed Insights Page**: Leverages custom animated SVG donut charts to visually categorize monthly spends, accompanied by case-insensitive subscription billing intervals.
+- **Adaptive Details Page**: Clean subscription profiles with custom loading screens and detailed NotFound/404 views.
+- **Multi-Currency Selection**: Custom CurrencyPickerModal supporting regional preferences including USD ($), EUR (€), GBP (£), INR (₹), CAD (C$), AUD (A$), and JPY (¥).
+- **Onboarding Experience**: Smooth onboarding layout that logs initial user engagement exactly once on landing.
+- **Robust API Client**: Pre-configured HTTP module featuring request abort-timeout handlers (10s) and safe JSON parsing for 204/empty response bodies.
+
+---
+
+## Tech Stack & Architecture
+
+- **Framework**: [Expo SDK 54](https://expo.dev/) (React Native) with file-based routing via `expo-router`.
+- **Styling**: Vanilla Tailwind CSS integrated via [NativeWind v5](https://www.nativewind.dev/) (css-in-js styling paradigm).
+- **Animations**: Timed splash scaling, opacity animations, and metallic reflections built with [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/).
+- **Authentication**: [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview) supporting Google OAuth SSO and secure password/MFA email verification.
+- **Analytics**: [PostHog React Native SDK](https://posthog.com/docs/libraries/react-native) tracking user navigation, subscription CRUD logs, status toggles, and detail views without distinct ID fragmentation.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js**: v18.0.0 or higher
+- **Package Manager**: npm
+- **Expo Go** app installed on your physical device, or an active simulator.
+
+### Installation
+
+1. Install application dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
-
-   ```bash
-   npx expo start
+2. Initialize your local configuration file (`.env`):
+   Create a `.env` file in the root of the `recurrly_app` directory:
+   ```env
+   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+   EXPO_PUBLIC_API_URL="http://localhost:3000"
+   POSTHOG_PROJECT_TOKEN="phc_..."
+   POSTHOG_HOST="https://us.i.posthog.com"
+   EXPO_PUBLIC_LOGO_DEV_TOKEN="pk_..."
    ```
 
-In the output, you'll find options to open the app in a
+3. Validate the environment and compile code:
+   Ensure all TypeScript declarations and styling parameters are properly compiled:
+   ```bash
+   # Run type-checking
+   npx tsc --noEmit
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   # Run ESLint validation
+   npm run lint
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. Launch the Metro Bundler:
+   ```bash
+   npx expo start -c
+   ```
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# react-native-recurrly
+5. Press `i` to launch iOS Simulator, `a` for Android Emulator, or scan the QR code using your phone's camera (iOS) or the Expo Go app (Android).

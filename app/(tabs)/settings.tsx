@@ -1,19 +1,86 @@
 import { useClerk, useUser } from "@clerk/expo";
-import clsx from "clsx";
-import dayjs from "dayjs";
+import { usePostHog } from "posthog-react-native";
+import { useState } from "react";
 import { styled } from "nativewind";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, View, Alert } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+import { clsx } from "clsx";
+import dayjs from "dayjs";
 
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+import { colors } from "@/constants/theme";
+import { useSubscriptions } from "@/context/subscriptions";
 import Divider from "@/components/settings/Divider";
 import InfoRow from "@/components/settings/InfoRow";
 import SectionLabel from "@/components/settings/SectionLabel";
+import CurrencyPickerModal from "@/components/settings/CurrencyPickerModal";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
 const Settings = () => {
 	const { signOut } = useClerk();
 	const { user } = useUser();
+	const posthog = usePostHog();
+	const { defaultCurrency, setDefaultCurrency, clearAllSubscriptions } = useSubscriptions();
+
+	const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+
+	const handleClearAllData = () => {
+		Alert.alert(
+			"Clear All Data",
+			"Are you sure you want to permanently delete all your subscriptions? This action cannot be undone.",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete All",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							await clearAllSubscriptions();
+							Alert.alert("Success", "All subscriptions have been deleted.");
+						} catch {
+							Alert.alert("Error", "Failed to delete subscriptions. Please try again.");
+						}
+					},
+				},
+			]
+		);
+	};
+
+	const handleReportBug = () => {
+		Alert.alert(
+			"Report a Bug",
+			"Thank you for helping us improve Recurrly! You can report issues directly to our support team.",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Email Support",
+					onPress: () => {
+						posthog?.capture("report_bug_clicked");
+						Alert.alert("Report Logged", "Thanks — we've recorded your report. If you need help, please email support@recurrly.com.");
+					},
+				},
+			]
+		);
+	};
+
+	const handleRateApp = () => {
+		Alert.alert(
+			"Rate Recurrly",
+			"Are you enjoying Recurrly? Let us know what you think by leaving a review on the App Store!",
+			[
+				{ text: "Not Now", style: "cancel" },
+				{
+					text: "Rate Now",
+					onPress: () => {
+						posthog?.capture("rate_app_clicked");
+						Alert.alert("Thank you!", "Thank you for rating our app! We appreciate your support.");
+					},
+				},
+			]
+		);
+	};
 
 	const initials =
 		[user?.firstName, user?.lastName]
@@ -104,37 +171,81 @@ const Settings = () => {
 				{/* ── Account details ── */}
 				<SectionLabel title="Account" />
 				<View className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
-					<InfoRow label="Full name" value={displayName} />
+					<InfoRow label="Full name" value={displayName} icon={<Ionicons name="person-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="Email" value={email} />
+					<InfoRow label="Email" value={email} icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="Member since" value={memberSince} />
+					<InfoRow label="Member since" value={memberSince} icon={<Ionicons name="calendar-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="User ID" value={userId} />
+					<InfoRow label="User ID" value={userId} icon={<Ionicons name="finger-print-outline" size={18} color={colors.primary} />} />
 				</View>
 
 				{/* ── Preferences ── */}
 				<SectionLabel title="Preferences" />
 				<View className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
-					<InfoRow label="Currency" value="USD" />
+					<Pressable
+						onPress={() => setShowCurrencyPicker(true)}
+						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
+					>
+						<InfoRow label="Currency" value={defaultCurrency} showArrow icon={<Ionicons name="cash-outline" size={18} color={colors.primary} />} />
+					</Pressable>
 					<Divider />
-					<InfoRow label="Notifications" value="Enabled" />
+					<InfoRow label="Notifications" value="Enabled" icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="App version" value="1.0.0" />
+					<InfoRow label="App version" value="1.0.0" icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />} />
+				</View>
+
+				{/* ── Support & Feedback ── */}
+				<SectionLabel title="Support & Feedback" />
+				<View className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
+					<Pressable
+						onPress={handleReportBug}
+						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
+					>
+						<InfoRow label="Report a bug" value="" showArrow icon={<Ionicons name="bug-outline" size={18} color={colors.primary} />} />
+					</Pressable>
+					<Divider />
+					<Pressable
+						onPress={handleRateApp}
+						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
+					>
+						<InfoRow label="Rate this app" value="" showArrow icon={<Ionicons name="star-outline" size={18} color={colors.primary} />} />
+					</Pressable>
 				</View>
 
 				{/* ── Sign out ── */}
 				<SectionLabel title="Account actions" />
 				<Pressable
+					className="items-center rounded-2xl border border-destructive bg-card py-4 mb-4"
+					style={({ pressed }) => pressed && { opacity: 0.7 }}
+					onPress={handleClearAllData}
+				>
+					<Text className="text-base font-sans-bold text-destructive">
+						Clear all subscriptions
+					</Text>
+				</Pressable>
+
+				<Pressable
 					className="items-center rounded-2xl bg-accent py-4"
 					style={({ pressed }) => pressed && { opacity: 0.7 }}
-					onPress={() => signOut()}
+					onPress={() => {
+						posthog.capture("user_signed_out");
+						posthog.reset();
+						signOut();
+					}}
 				>
 					<Text className="text-base font-sans-bold text-primary">
 						Sign out
 					</Text>
 				</Pressable>
 			</ScrollView>
+
+			<CurrencyPickerModal
+				visible={showCurrencyPicker}
+				onClose={() => setShowCurrencyPicker(false)}
+				selected={defaultCurrency}
+				onSelect={setDefaultCurrency}
+			/>
 		</SafeAreaView>
 	);
 };

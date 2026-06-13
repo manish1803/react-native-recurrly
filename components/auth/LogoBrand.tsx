@@ -1,16 +1,18 @@
-import { Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 
 /**
  * LogoBrand — brand identity block for auth screens.
- * Renders the "R" logomark, "Recurly" wordmark, and "SMART BILLING" tagline.
+ * Renders the brand logo, "Recurrly" wordmark, and "Smart Billing" tagline.
  */
 const LogoBrand = () => {
 	return (
 		<View className="auth-brand-block">
 			<View className="auth-logo-wrap">
-				<View className="auth-logo-mark">
-					<Text className="auth-logo-mark-text">R</Text>
-				</View>
+				<Image
+					source={require("../../assets/icons/logo.png")}
+					style={{ width: 44, height: 44, borderRadius: 10 }}
+					resizeMode="contain"
+				/>
 				<View>
 					<Text className="auth-wordmark">Recurrly</Text>
 					<Text className="auth-wordmark-sub">Smart Billing</Text>

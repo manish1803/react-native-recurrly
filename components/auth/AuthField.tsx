@@ -4,16 +4,9 @@ import {
 	StyleSheet,
 	Text,
 	TextInput,
-	TextInputProps,
 	View,
 } from "react-native";
 import { colors } from "@/constants/theme";
-
-interface AuthFieldProps extends TextInputProps {
-	label: string;
-	error?: string;
-	isPassword?: boolean;
-}
 
 /**
  * AuthField — reusable labeled input field.
