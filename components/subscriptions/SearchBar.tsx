@@ -1,12 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors } from "@/constants/theme";
 
-interface SearchBarProps {
-	value: string;
-	onChangeText: (text: string) => void;
-	placeholder?: string;
-}
-
 /**
  * SearchBar — reusable search input with a clear button.
  * Uses StyleSheet for TextInput (NativeWind v5 preview doesn't reliably

@@ -1,69 +1,132 @@
-import React from "react";
+import { useEffect } from "react";
+import { router } from "expo-router";
+import { styled } from "nativewind";
 import { ScrollView, StyleSheet, Text, View, Pressable, Image } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
-import { styled } from "nativewind";
-import { router } from "expo-router";
+import Animated, { useSharedValue, useAnimatedProps, withTiming, Easing } from "react-native-reanimated";
+import Svg, { Circle, G } from "react-native-svg";
+import dayjs from "dayjs";
 
 import { icons } from "@/constants/icons";
-import { colors } from "@/constants/theme";
-import { simpleIconUri } from "@/constants/serviceLogos";
+import { resolveServiceLogo, fallbackIcon } from "@/constants/serviceLogos";
+import { formatCurrency, hexToRGBA } from "@/lib/utils";
+import { useSubscriptions } from "@/context/subscriptions";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import ListHeading from "@/components/ListHeading";
-import { formatCurrency } from "@/lib/utils";
 
 const SafeAreaView = styled(RNSafeAreaView);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-interface HistoryItem {
-	id: string;
-	name: string;
-	icon: any;
-	price: number;
-	date: string;
-	color: string;
-}
+const CATEGORY_COLORS: Record<string, string> = {
+	Entertainment:    "#4f46e5", // Indigo
+	"AI Tools":       "#a855f7", // Purple
+	"Developer Tools": "#0ea5e9", // Sky Blue
+	"Dev Tools":      "#0ea5e9",
+	Design:           "#10b981", // Emerald Green
+	Productivity:     "#f97316", // Bright Orange
+	Cloud:            "#06b6d4", // Cyan
+	Music:            "#eab308", // Golden Yellow
+	Other:            "#64748b", // Slate Grey
+	Misc:             "#64748b",
+};
 
-const HISTORY_ITEMS: HistoryItem[] = [
-	{
-		id: "history-1",
-		name: "Claude",
-		icon: icons.claude,
-		price: 9.84,
-		date: "June 25, 12:00",
-		color: "#f5c542", // Yellow
-	},
-	{
-		id: "history-2",
-		name: "Canva",
-		icon: icons.canva,
-		price: 43.89,
-		date: "June 30, 16:00",
-		color: "#8fd1bd", // Teal/Green
-	},
-	{
-		id: "history-3",
-		name: "Grammarly",
-		icon: simpleIconUri("grammarly"),
-		price: 15.00,
-		date: "June 24, 10:00",
-		color: "#fff8e7", // Cream/Beige
-	},
-];
+// Helper to condense category names for premium small-screen presentation
+const abbreviateCategory = (label: string): string => {
+	switch (label) {
+		case "Entertainment": return "Entertainment";
+		case "AI Tools": return "AI Tools";
+		case "Developer Tools": return "Dev Tools";
+		case "Dev Tools": return "Dev Tools";
+		case "Design": return "Design";
+		case "Productivity": return "Productivity";
+		case "Cloud": return "Cloud";
+		case "Music": return "Music";
+		case "Other": return "Other";
+		default: return label;
+	}
+};
 
-const CHART_DATA = [
-	{ day: "Mon", value: 36 },
-	{ day: "Tue", value: 31 },
-	{ day: "Wed", value: 23 },
-	{ day: "Thr", value: 40, highlight: true },
-	{ day: "Fri", value: 35 },
-	{ day: "Sat", value: 21 },
-	{ day: "Sun", value: 24 },
-];
 
-const GRID_LINES = [45, 35, 25, 5, 0];
-const MAX_CHART_VALUE = 45;
-const CHART_AREA_HEIGHT = 160;
+const AnimatedDonutSegment = ({
+	cx,
+	cy,
+	r,
+	stroke,
+	strokeWidth,
+	length,
+	offset,
+	circumference,
+	progress,
+}: AnimatedDonutSegmentProps) => {
+	const animatedProps = useAnimatedProps(() => {
+		const drawLength = length * progress.value;
+		const drawOffset = offset * progress.value;
+		return {
+			strokeDasharray: `${drawLength} ${circumference}`,
+			strokeDashoffset: drawOffset,
+		};
+	});
+
+	return (
+		<AnimatedCircle
+			cx={cx}
+			cy={cy}
+			r={r}
+			stroke={stroke}
+			strokeWidth={strokeWidth}
+			animatedProps={animatedProps}
+			fill="transparent"
+		/>
+	);
+};
 
 const Insights = () => {
+	const { insights, defaultCurrency } = useSubscriptions();
+
+	const totalMonthlySpend = insights?.totalMonthlySpend || 0;
+	const history = insights?.history || [];
+
+	// Map raw chart data to donut segments
+	const rawChartData = insights?.chartData || [];
+	// Only process items that have positive spend
+	const chartData = rawChartData.filter((item: any) => item.value > 0);
+
+	const radius = 65;
+	const strokeWidth = 18;
+	const circumference = 2 * Math.PI * radius; // ~408.41
+
+	// If totalMonthlySpend is 0, we treat it as no active spending
+	const hasActiveSpend = totalMonthlySpend > 0 && chartData.length > 0;
+
+	// Shared value for donut chart unfolding animation
+	const chartProgress = useSharedValue(0);
+
+	useEffect(() => {
+		chartProgress.value = 0;
+		chartProgress.value = withTiming(1, {
+			duration: 1200,
+			easing: Easing.out(Easing.cubic),
+		});
+	}, [totalMonthlySpend, chartProgress]);
+
+	// Calculate segments with colors and offsets
+	let accumulatedOffset = 0;
+	const segments = chartData.map((item: any) => {
+		const percentage = hasActiveSpend ? item.value / totalMonthlySpend : 0;
+		const length = percentage * circumference;
+		const offset = -accumulatedOffset;
+		accumulatedOffset += length;
+		const color = CATEGORY_COLORS[item.label] || CATEGORY_COLORS["Other"];
+
+		return {
+			...item,
+			percentage,
+			length,
+			offset,
+			color,
+		};
+	});
+
 	return (
 		<SafeAreaView className="flex-1 bg-background">
 			<ScrollView
@@ -84,81 +147,91 @@ const Insights = () => {
 						/>
 					</Pressable>
 					<Text style={styles.headerTitle}>Monthly Insights</Text>
-					<Pressable
-						style={styles.headerButton}
-						onPress={() => {}}
-						hitSlop={8}
-					>
-						<Text style={styles.moreText}>•••</Text>
-					</Pressable>
+					<View style={styles.headerButton} />
 				</View>
 
-				{/* ── Upcoming Title ── */}
-				<ListHeading title="Upcoming" />
+				{/* ── Category Breakdown Title ── */}
+				<ListHeading title="Category Breakdown" />
 
 				{/* ── Chart Card ── */}
 				<View style={styles.chartCard}>
 					<View style={styles.chartWrapper}>
-						{/* Y-Axis Labels */}
-						<View style={styles.yAxis}>
-							{GRID_LINES.map((val, idx) => {
-								const top = (1 - val / MAX_CHART_VALUE) * CHART_AREA_HEIGHT;
-								return (
-									<Text
-										key={idx}
-										style={[styles.yLabel, { top: top - 7 }]}
-									>
-										{val}
-									</Text>
-								);
-							})}
+						{/* Top: Donut SVG */}
+						<View style={styles.donutContainer}>
+							<Svg width={170} height={170} viewBox="0 0 170 170">
+								<G transform="rotate(-90 85 85)">
+									{/* Background Track Circle */}
+									<Circle
+										cx="85"
+										cy="85"
+										r={radius}
+										stroke="rgba(0, 0, 0, 0.05)"
+										strokeWidth={strokeWidth}
+										fill="transparent"
+									/>
+									
+									{hasActiveSpend ? (
+										segments.map((seg: any, idx: number) => (
+											<AnimatedDonutSegment
+												key={idx}
+												cx="85"
+												cy="85"
+												r={radius}
+												stroke={seg.color}
+												strokeWidth={strokeWidth}
+												length={seg.length}
+												offset={seg.offset}
+												circumference={circumference}
+												progress={chartProgress}
+											/>
+										))
+									) : (
+										/* Placeholder Circle when database has no active subscriptions */
+										<Circle
+											cx="85"
+											cy="85"
+											r={radius}
+											stroke="#94a3b8"
+											strokeWidth={strokeWidth}
+											fill="transparent"
+										/>
+									)}
+								</G>
+							</Svg>
+							
+							{/* Center text inside donut */}
+							<View style={styles.donutCenter}>
+								<Text style={styles.donutCenterLabel}>Monthly</Text>
+								<Text numberOfLines={1} adjustsFontSizeToFit style={styles.donutCenterValue}>
+									{formatCurrency(totalMonthlySpend, defaultCurrency)}
+								</Text>
+							</View>
 						</View>
 
-						{/* Chart Area */}
-						<View style={styles.chartArea}>
-							{/* Grid Lines */}
-							<View style={StyleSheet.absoluteFill}>
-								{GRID_LINES.map((val, idx) => {
-									const top = (1 - val / MAX_CHART_VALUE) * CHART_AREA_HEIGHT;
-									return (
-										<View
-											key={idx}
-											style={[
-												styles.gridLine,
-												{ top },
-												val === 0 && { borderStyle: "solid", borderBottomColor: "rgba(0,0,0,0.15)" },
-											]}
-										/>
-									);
-								})}
-							</View>
-
-							{/* Bars */}
-							{CHART_DATA.map((item, idx) => {
-								const barHeight = (item.value / MAX_CHART_VALUE) * CHART_AREA_HEIGHT;
-								return (
-									<View key={idx} style={styles.barColumn}>
-										{item.highlight && (
-											<View style={[styles.tooltipContainer, { bottom: barHeight + 6 }]}>
-												<View style={styles.tooltipBox}>
-													<Text style={styles.tooltipText}>${item.value}</Text>
-												</View>
-												<View style={styles.tooltipArrow} />
+						{/* Bottom: Category Legend */}
+						<View style={styles.legendContainer}>
+							{hasActiveSpend ? (
+								<View style={styles.legendList}>
+									{segments.map((seg: any, idx: number) => (
+										<View key={idx} style={styles.legendRow}>
+											<View style={styles.legendLeft}>
+												<View style={[styles.legendDot, { backgroundColor: seg.color }]} />
+												<Text numberOfLines={1} style={styles.legendName}>
+													{abbreviateCategory(seg.label)}
+												</Text>
 											</View>
-										)}
-										<View
-											style={[
-												styles.bar,
-												{
-													height: barHeight,
-													backgroundColor: item.highlight ? colors.accent : colors.primary,
-												},
-											]}
-										/>
-										<Text style={styles.barLabel}>{item.day}</Text>
-									</View>
-								);
-							})}
+											<Text style={styles.legendValue}>
+												{formatCurrency(seg.value, defaultCurrency)} ({Math.round(seg.percentage * 100)}%)
+											</Text>
+										</View>
+									))}
+								</View>
+							) : (
+								<View style={styles.noDataLegend}>
+									<Text style={styles.noDataText}>No subscriptions</Text>
+									<Text style={styles.noDataSubtext}>Add active subscriptions to view breakdown.</Text>
+								</View>
+							)}
 						</View>
 					</View>
 				</View>
@@ -167,11 +240,11 @@ const Insights = () => {
 				<View style={styles.expensesCard}>
 					<View>
 						<Text style={styles.expensesTitle}>Expenses</Text>
-						<Text style={styles.expensesSubtext}>March 2026</Text>
+						<Text style={styles.expensesSubtext}>{dayjs().format("MMMM YYYY")}</Text>
 					</View>
 					<View style={styles.expensesRight}>
-						<Text style={styles.expensesAmount}>-$424.63</Text>
-						<Text style={styles.expensesChange}>+12%</Text>
+						<Text style={styles.expensesAmount}>-{formatCurrency(totalMonthlySpend, defaultCurrency)}</Text>
+						<Text style={styles.expensesChange}>Live</Text>
 					</View>
 				</View>
 
@@ -179,33 +252,42 @@ const Insights = () => {
 				<ListHeading title="History" />
 
 				{/* ── History List ── */}
-				{HISTORY_ITEMS.map((item) => (
-					<View
-						key={item.id}
-						className="sub-card mb-4"
-						style={{ backgroundColor: item.color }}
-					>
-						<View className="sub-head">
-							<View className="sub-main">
-								<View className="sub-icon">
-									<ServiceIcon source={item.icon} size={44} />
-								</View>
-								<View className="sub-copy">
-									<Text numberOfLines={1} className="sub-title">
-										{item.name}
-									</Text>
-									<Text numberOfLines={1} className="sub-meta">
-										{item.date}
-									</Text>
-								</View>
-							</View>
-							<View className="sub-price-box">
-								<Text className="sub-price">{formatCurrency(item.price)}</Text>
-								<Text className="sub-billing">per month</Text>
-							</View>
-						</View>
+				{history.length === 0 ? (
+					<View className="items-center py-6 bg-card rounded-2xl border border-border">
+						<Text className="home-empty-state text-center font-sans-medium">No subscription history available yet.</Text>
 					</View>
-				))}
+				) : (
+					history.map((item: any) => {
+						const resolvedIcon = resolveServiceLogo(item.name) || fallbackIcon;
+						return (
+							<View
+								key={item.id}
+								className="sub-card mb-4"
+								style={{ backgroundColor: item.color ? hexToRGBA(item.color, 0.12) : "#f6eecf" }}
+							>
+								<View className="sub-head">
+									<View className="sub-main">
+										<View className="sub-icon">
+											<ServiceIcon source={resolvedIcon} size={44} />
+										</View>
+										<View className="sub-copy">
+											<Text numberOfLines={1} className="sub-title">
+												{item.name}
+											</Text>
+											<Text numberOfLines={1} className="sub-meta">
+												{item.date}
+											</Text>
+										</View>
+									</View>
+									<View className="sub-price-box">
+										<Text className="sub-price">{formatCurrency(item.price, item.currency)}</Text>
+										<Text className="sub-billing">per {item.billing === "Yearly" ? "year" : "month"}</Text>
+									</View>
+								</View>
+							</View>
+						);
+					})
+				)}
 			</ScrollView>
 		</SafeAreaView>
 	);
@@ -253,91 +335,104 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: "rgba(0, 0, 0, 0.1)",
 		paddingTop: 24,
-		paddingBottom: 16,
-		paddingHorizontal: 16,
+		paddingBottom: 24,
+		paddingHorizontal: 20,
 		marginBottom: 20,
 	},
 	chartWrapper: {
-		flexDirection: "row",
-		height: 190,
+		flexDirection: "column",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "100%",
 	},
-	yAxis: {
-		width: 24,
-		height: CHART_AREA_HEIGHT,
+	donutContainer: {
 		position: "relative",
+		width: 170,
+		height: 170,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 24,
 	},
-	yLabel: {
+	donutCenter: {
 		position: "absolute",
-		right: 6,
+		alignItems: "center",
+		justifyContent: "center",
+		width: 110,
+		height: 110,
+	},
+	donutCenterLabel: {
+		fontSize: 10,
+		fontFamily: "sans-semibold",
+		color: "rgba(0, 0, 0, 0.4)",
+		textTransform: "uppercase",
+		letterSpacing: 1,
+	},
+	donutCenterValue: {
+		fontSize: 18,
+		fontFamily: "sans-extrabold",
+		color: "#081126",
+		textAlign: "center",
+		marginTop: 2,
+		maxWidth: 105,
+	},
+	legendContainer: {
+		width: "100%",
+		justifyContent: "center",
+	},
+	legendList: {
+		width: "100%",
+	},
+	legendScroll: {
+		flex: 1,
+	},
+	legendRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		paddingVertical: 10,
+		borderBottomWidth: 1,
+		borderBottomColor: "rgba(0, 0, 0, 0.05)",
+	},
+	legendLeft: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
+	legendDot: {
+		width: 10,
+		height: 10,
+		borderRadius: 5,
+		marginRight: 10,
+	},
+	legendInfo: {
+		flex: 1,
+	},
+	legendName: {
+		fontSize: 14,
+		fontFamily: "sans-bold",
+		color: "#081126",
+	},
+	legendValue: {
+		fontSize: 13,
+		fontFamily: "sans-semibold",
+		color: "rgba(0, 0, 0, 0.6)",
+	},
+	noDataLegend: {
+		justifyContent: "center",
+		alignItems: "center",
+		paddingVertical: 10,
+	},
+	noDataText: {
+		fontSize: 14,
+		fontFamily: "sans-bold",
+		color: "#081126",
+		textAlign: "center",
+	},
+	noDataSubtext: {
 		fontSize: 12,
 		fontFamily: "sans-semibold",
 		color: "rgba(0, 0, 0, 0.4)",
-	},
-	chartArea: {
-		flex: 1,
-		height: CHART_AREA_HEIGHT,
-		position: "relative",
-		flexDirection: "row",
-		justifyContent: "space-between",
-	},
-	gridLine: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		borderBottomWidth: 1,
-		borderBottomColor: "rgba(0, 0, 0, 0.05)",
-		borderStyle: "dashed",
-	},
-	barColumn: {
-		alignItems: "center",
-		justifyContent: "flex-end",
-		height: CHART_AREA_HEIGHT,
-		flex: 1,
-	},
-	bar: {
-		width: 10,
-		borderRadius: 5,
-	},
-	barLabel: {
-		marginTop: 8,
-		fontSize: 12,
-		fontFamily: "sans-semibold",
-		color: "rgba(0, 0, 0, 0.5)",
-	},
-	tooltipContainer: {
-		position: "absolute",
-		alignItems: "center",
-		zIndex: 10,
-	},
-	tooltipBox: {
-		backgroundColor: "#ffffff",
-		borderRadius: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.08,
-		shadowRadius: 4,
-		elevation: 2,
-		borderWidth: 1,
-		borderColor: "rgba(0, 0, 0, 0.05)",
-	},
-	tooltipText: {
-		color: "#ea7a53",
-		fontSize: 12,
-		fontFamily: "sans-bold",
-	},
-	tooltipArrow: {
-		width: 0,
-		height: 0,
-		backgroundColor: "transparent",
-		borderStyle: "solid",
-		borderLeftWidth: 4,
-		borderRightWidth: 4,
-		borderTopWidth: 4,
-		borderLeftColor: "transparent",
-		borderRightColor: "transparent",
-		borderTopColor: "#ffffff",
+		marginTop: 4,
+		textAlign: "center",
 	},
 	expensesCard: {
 		backgroundColor: "#fff8e7",

@@ -54,6 +54,7 @@ export default {
       ],
       "@clerk/expo",
       "expo-secure-store",
+      "expo-web-browser",
     ],
     experiments: {
       typedRoutes: true,

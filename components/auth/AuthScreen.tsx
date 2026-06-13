@@ -1,15 +1,10 @@
 import { styled } from "nativewind";
-import { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 // Must use styled() for third-party components (react-native-safe-area-context)
 // to allow NativeWind className — same pattern as (tabs)/index.tsx
 const SafeAreaView = styled(RNSafeAreaView);
-
-interface AuthScreenProps {
-	children: ReactNode;
-}
 
 /**
  * AuthScreen — full-screen wrapper for auth screens.

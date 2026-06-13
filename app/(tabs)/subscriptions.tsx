@@ -1,7 +1,9 @@
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import { useMemo, useState } from "react";
 import {
+	Alert,
 	FlatList,
 	Pressable,
 	ScrollView,
@@ -9,18 +11,57 @@ import {
 	View,
 } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
 
+import { useSubscriptions } from "@/context/subscriptions";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import SearchBar from "@/components/subscriptions/SearchBar";
-import { useSubscriptions } from "@/context/subscriptions";
 
 const SafeAreaView = styled(RNSafeAreaView);
-
 
 const ALL = "All";
 
 const Subscriptions = () => {
-	const { subscriptions } = useSubscriptions();
+	const { subscriptions, updateSubscription, deleteSubscription } = useSubscriptions();
+	const posthog = usePostHog();
+
+	const handleToggleStatus = async (subId: string, currentStatus?: string) => {
+		const newStatus = currentStatus === "paused" ? "active" : "paused";
+		try {
+			await updateSubscription(subId, { status: newStatus });
+			posthog?.capture("subscription_status_toggled", {
+				subscription_id: subId,
+				new_status: newStatus,
+			});
+		} catch (err) {
+			console.error("Failed to toggle status:", err);
+		}
+	};
+
+	const handleDelete = (subId: string, name: string) => {
+		Alert.alert(
+			"Cancel Subscription",
+			`Are you sure you want to cancel and delete ${name}?`,
+			[
+				{ text: "No", style: "cancel" },
+				{
+					text: "Yes, Cancel",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							await deleteSubscription(subId);
+							posthog?.capture("subscription_deleted", {
+								subscription_id: subId,
+								subscription_name: name,
+							});
+						} catch (err) {
+							console.error("Failed to delete subscription:", err);
+						}
+					},
+				},
+			]
+		);
+	};
 	const [query, setQuery] = useState("");
 	const [activeCategory, setActiveCategory] = useState(ALL);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -116,14 +157,22 @@ const Subscriptions = () => {
 						</ScrollView>
 					</>
 				}
-				renderItem={({ item }) => (
-					<SubscriptionCard
-						{...item}
-						expanded={expandedId === item.id}
-						onPress={() =>
-							setExpandedId((id) => (id === item.id ? null : item.id))
-						}
-					/>
+				renderItem={({ item, index }) => (
+					<Animated.View 
+						entering={FadeInDown.delay(index * 60).duration(400).springify()}
+						layout={LinearTransition.springify()}
+					>
+						<SubscriptionCard
+							{...item}
+							expanded={expandedId === item.id}
+							onPress={() =>
+								setExpandedId((id) => (id === item.id ? null : item.id))
+							}
+							onStatusTogglePress={() => handleToggleStatus(item.id, item.status)}
+							onDeletePress={() => handleDelete(item.id, item.name)}
+							showDetailsButton={true}
+						/>
+					</Animated.View>
 				)}
 				ItemSeparatorComponent={() => <View className="h-4" />}
 				ListEmptyComponent={

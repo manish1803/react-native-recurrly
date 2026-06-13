@@ -1,14 +1,6 @@
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { ActivityIndicator, Pressable, Text } from "react-native";
 import { colors } from "@/constants/theme";
-
-interface AuthButtonProps {
-	label: string;
-	onPress: () => void;
-	disabled?: boolean;
-	loading?: boolean;
-	variant?: "primary" | "secondary";
-}
 
 /**
  * AuthButton — primary and secondary CTA button for auth screens.

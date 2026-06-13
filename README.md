@@ -1,51 +1,57 @@
-# Welcome to your Expo app 👋
+# Recurrly Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Vibrant, premium, glassmorphic React Native mobile application built on Expo SDK 54, integrated with Clerk for authentication and PostHog for real-time engagement analytics. The app connects to the Recurrly Node.js REST backend.
 
-## Get started
+---
 
-1. Install dependencies
+## Features
 
+- **Dashboard / Spend Overview**: Beautiful metallic shimmer credit card interface summarizing total monthly spend and active subscription count.
+- **Service Auto-Discovery**: Smart modal matching popular brands (Netflix, Spotify, GitHub, Claude, etc.) to their official brand logos via CDN logos or local bundled icons.
+- **Detailed Insights**: High-performance SVG Donut Charts visually aggregating monthly spends by categories.
+- **Subscriptions List & Filtering**: Clean, responsive layout to search and sort subscriptions by categories.
+- **Detailed Settings**: Manage multi-tenant profiles, configure default currencies, rate the app, or delete all subscription data.
+
+---
+
+## Tech Stack & Design System
+
+- **Framework**: [Expo SDK 54](https://expo.dev/) (React Native) with file-based routing via `expo-router`.
+- **Styling**: Vanilla Tailwind CSS integrated via [NativeWind v4](https://www.nativewind.dev/).
+- **Animations**: Fluid layouts, split grids, and metallic shimmer reflection effects built with [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/).
+- **Auth Layer**: [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview) supporting Google OAuth and password/MFA email verification.
+- **Analytics**: [PostHog React Native SDK](https://posthog.com/docs/libraries/react-native) tracking screens, button interactions, subscription creation, status toggles, and deletion events.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js**: v18.0.0 or higher
+- **Package Manager**: npm (or yarn/pnpm)
+- **Expo Go** app installed on your physical device (iOS or Android), or an active simulator.
+
+### Installation
+
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Initialize your local configuration file (`.env`):
+   Create a `.env` file in the root of the `recurrly_app` directory:
+   ```env
+   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+   EXPO_PUBLIC_API_URL="http://localhost:3000"
+   POSTHOG_PROJECT_TOKEN="phc_..."
+   POSTHOG_HOST="https://us.i.posthog.com"
+   EXPO_PUBLIC_LOGO_DEV_TOKEN="pk_..."
+   ```
 
+3. Launch Metro Bundler:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# react-native-recurrly
+4. Press `i` to launch iOS Simulator, `a` for Android Emulator, or scan the QR code using your phone's camera (iOS) or the Expo Go app (Android).

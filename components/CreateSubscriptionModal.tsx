@@ -1,8 +1,9 @@
-import clsx from "clsx";
+import { clsx } from "clsx";
 import dayjs from "dayjs";
 import { useState } from "react";
 import {
 	ImageSourcePropType,
+	Keyboard,
 	KeyboardAvoidingView,
 	Modal,
 	Platform,
@@ -16,10 +17,11 @@ import {
 
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { icons } from "@/constants/icons";
-import { POPULAR_SERVICES, type ServiceEntry } from "@/constants/serviceLogos";
+import { POPULAR_SERVICES, resolveServiceLogo } from "@/constants/serviceLogos";
 import { colors } from "@/constants/theme";
 import { getIconInitial } from "@/lib/utils";
-import { posthog } from "@/src/config/posthog";
+
+import { useSubscriptions } from "@/context/subscriptions";
 
 /** The generic fallback entry ("Other") */
 const DEFAULT_ENTRY: ServiceEntry = POPULAR_SERVICES[POPULAR_SERVICES.length - 1];
@@ -29,7 +31,11 @@ const DEFAULT_ENTRY: ServiceEntry = POPULAR_SERVICES[POPULAR_SERVICES.length - 1
  * Prefers local bundled PNG (instant, offline) when available,
  * then Simple Icons CDN SVG (always set, free, no API key).
  */
-function entrySource(entry: ServiceEntry): ImageSourcePropType {
+function entrySource(entry: ServiceEntry, name = ""): ImageSourcePropType {
+	if (entry.key === "other" && name.trim()) {
+		const resolved = resolveServiceLogo(name);
+		if (resolved) return resolved;
+	}
 	return entry.localSource ?? entry.logoSource;
 }
 
@@ -37,10 +43,20 @@ function entrySource(entry: ServiceEntry): ImageSourcePropType {
 function autoMatchEntry(name: string): ServiceEntry | null {
 	if (!name.trim()) return null;
 	const q = name.toLowerCase().trim();
+	// Exact match first
 	for (const svc of POPULAR_SERVICES) {
 		if (svc.key === "other") continue;
-		if (svc.keywords.some((kw) => q.includes(kw) || kw.includes(q))) {
+		if (svc.keywords.some((kw) => kw === q)) {
 			return svc;
+		}
+	}
+	// Prefix match next (min 2 chars to avoid single-letter hyper-matching)
+	if (q.length >= 2) {
+		for (const svc of POPULAR_SERVICES) {
+			if (svc.key === "other") continue;
+			if (svc.keywords.some((kw) => kw.startsWith(q) || q.startsWith(kw))) {
+				return svc;
+			}
 		}
 	}
 	return null;
@@ -57,30 +73,18 @@ const CATEGORIES = [
 	"Other",
 ] as const;
 
-type Category = (typeof CATEGORIES)[number];
-type Frequency = "Monthly" | "Yearly";
-
 const CATEGORY_COLORS: Record<string, string> = {
-	Entertainment: "#b8d4e3",
-	"AI Tools":    "#e8def8",
-	"Developer Tools": "#e8def8",
-	Design:        "#b8e8d0",
-	Productivity:  "#fff9c4",
-	Cloud:         "#c8e6c9",
-	Music:         "#f5c542",
-	Other:         "#f6eecf",
+	Entertainment:    "#4f46e5", // Indigo
+	"AI Tools":       "#a855f7", // Purple
+	"Developer Tools": "#0ea5e9", // Sky Blue
+	Design:           "#10b981", // Emerald Green
+	Productivity:     "#f97316", // Bright Orange
+	Cloud:            "#06b6d4", // Cyan
+	Music:            "#eab308", // Golden Yellow
+	Other:            "#64748b", // Slate Grey
 };
 
-interface CreateSubscriptionModalProps {
-	visible: boolean;
-	onClose: () => void;
-	onSubmit: (subscription: Subscription) => void;
-}
 
-interface IconPickerGridProps {
-	selected: ServiceEntry;
-	onSelect: (entry: ServiceEntry) => void;
-}
 
 const IconPickerGrid = ({ selected, onSelect }: IconPickerGridProps) => (
 	<View style={styles.pickerGrid}>
@@ -116,6 +120,7 @@ const CreateSubscriptionModal = ({
 	onClose,
 	onSubmit,
 }: CreateSubscriptionModalProps) => {
+	const { defaultCurrency } = useSubscriptions();
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState("");
 	const [frequency, setFrequency] = useState<Frequency>("Monthly");
@@ -129,7 +134,11 @@ const CreateSubscriptionModal = ({
 		if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
 		// Auto-suggest icon when name matches a known service
 		const match = autoMatchEntry(text);
-		if (match) setSelectedEntry(match);
+		if (match) {
+			setSelectedEntry(match);
+		} else {
+			setSelectedEntry(DEFAULT_ENTRY);
+		}
 	};
 
 	const validate = (): boolean => {
@@ -158,13 +167,14 @@ const CreateSubscriptionModal = ({
 	};
 
 	const handleSubmit = () => {
+		Keyboard.dismiss();
 		if (!validate()) return;
 		const now = dayjs();
 		const cat: string = category || "Other";
 
 		// If no brand logo is available (Other entry selected), generate an initial
 		// avatar so the card always shows something meaningful.
-		const resolvedSource = entrySource(selectedEntry);
+		const resolvedSource = entrySource(selectedEntry, name);
 		const usesGenericEntry = selectedEntry.key === "other";
 		const iconInitial = usesGenericEntry && name.trim()
 			? getIconInitial(name.trim())
@@ -176,7 +186,7 @@ const CreateSubscriptionModal = ({
 			iconInitial,
 			name: name.trim(),
 			price: parseFloat(parseFloat(price).toFixed(2)),
-			currency: "USD",
+			currency: defaultCurrency,
 			billing: frequency,
 			category: cat,
 			status: "active",
@@ -186,15 +196,9 @@ const CreateSubscriptionModal = ({
 				: now.add(1, "year")
 			).toISOString(),
 			color: CATEGORY_COLORS[cat] ?? "#f6eecf",
+			serviceKey: selectedEntry.key,
 		};
 		onSubmit(subscription);
-
-		posthog.capture("subscription_created", {
-			subscription_name: name.trim(),
-			subscription_price: parseFloat(price),
-			subscription_frequency: frequency,
-			subscription_category: cat,
-		});
 
 		resetForm();
 		onClose();
@@ -243,12 +247,12 @@ const CreateSubscriptionModal = ({
 										]}
 										hitSlop={4}
 									>
-										{/* Show brand icon (SVG or local PNG) via ServiceIcon */}
 										{(() => {
-											const src = entrySource(selectedEntry);
+											const src = entrySource(selectedEntry, name);
 											return (
 												<ServiceIcon
 													source={src}
+													name={name}
 													size={styles.iconTriggerImage.width}
 												/>
 											);
@@ -295,7 +299,7 @@ const CreateSubscriptionModal = ({
 
 							{/* ── Price ── */}
 							<View className="auth-field">
-								<Text className="auth-label">Price (USD)</Text>
+								<Text className="auth-label">Price ({defaultCurrency})</Text>
 								<TextInput
 									style={[styles.input, !!errors.price && styles.inputError]}
 									placeholder="0.00"

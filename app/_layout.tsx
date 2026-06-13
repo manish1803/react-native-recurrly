@@ -4,13 +4,16 @@ import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import {
-	SplashScreen,
 	Stack,
 	useGlobalSearchParams,
 	usePathname,
 } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from "posthog-react-native";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { View } from "react-native";
+import AnimatedSplashScreen from "../components/AnimatedSplashScreen";
+import { SubscriptionsProvider } from "@/context/subscriptions";
 
 // Prevent the splash screen from auto-hiding before fonts are loaded
 SplashScreen.preventAutoHideAsync();
@@ -28,6 +31,7 @@ if (!publishableKey) {
 	const pathname = usePathname();
 	const params = useGlobalSearchParams();
 	const previousPathname = useRef<string | undefined>(undefined);
+	const [showSplash, setShowSplash] = useState(true);
 
 	const [fontsLoaded ] = useFonts({
 		"sans-light": require("../assets/fonts/PlusJakartaSans-Light.ttf"),
@@ -61,8 +65,16 @@ if (!publishableKey) {
 
 	if (!fontsLoaded || !authLoaded) return null;
 
-	return <Stack screenOptions={{ headerShown: false }} />
-
+	return (
+		<SubscriptionsProvider>
+			<View style={{ flex: 1 }}>
+				<Stack screenOptions={{ headerShown: false }} />
+				{showSplash && (
+					<AnimatedSplashScreen onAnimationComplete={() => setShowSplash(false)} />
+				)}
+			</View>
+		</SubscriptionsProvider>
+	);
 }
 
 export default function RootLayout() {

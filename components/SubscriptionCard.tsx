@@ -2,12 +2,13 @@ import {
 	formatCurrency,
 	formatStatusLabel,
 	formatSubscriptionDateTime,
+	hexToRGBA,
 } from "@/lib/utils";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ServiceIcon } from "@/components/ServiceIcon";
-
-// ─── Styles defined BEFORE the component (avoids "styles doesn't exist" TDZ crash) ─
+import { useSubscriptions } from "@/context/subscriptions";
+import { router } from "expo-router";
 
 const styles = StyleSheet.create({
 	/**
@@ -37,9 +38,8 @@ const styles = StyleSheet.create({
 	},
 });
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 const SubscriptionCard = ({
+	id,
 	name,
 	price,
 	currency,
@@ -55,12 +55,16 @@ const SubscriptionCard = ({
 	onPress,
 	startDate,
 	status,
+	onStatusTogglePress,
+	onDeletePress,
+	showDetailsButton,
 }: SubscriptionCardProps) => {
+	const { defaultCurrency } = useSubscriptions();
 	return (
 		<Pressable
 			onPress={onPress}
 			className={clsx("sub-card", expanded ? "sub-card-expanded" : "bg-card")}
-			style={!expanded && color ? { backgroundColor: color } : undefined}
+			style={color ? { backgroundColor: hexToRGBA(color, expanded ? 0.24 : 0.12) } : undefined}
 		>
 			<View className="sub-head">
 				<View className="sub-main">
@@ -70,23 +74,12 @@ const SubscriptionCard = ({
 					 * Otherwise render the brand icon via expo-image.
 					 */}
 					<View className="sub-icon">
-						{iconInitial ? (
-							<View
-								style={[
-									styles.initialAvatar,
-									{ backgroundColor: iconInitial.bgColor },
-								]}
-							>
-								<Text style={styles.initialLetter}>
-									{iconInitial.letter}
-								</Text>
-							</View>
-						) : (
-							<ServiceIcon
-								source={icon}
-								size={styles.iconImage.width}
-							/>
-						)}
+						<ServiceIcon
+							source={icon}
+							name={name}
+							iconInitial={iconInitial}
+							size={styles.iconImage.width}
+						/>
 					</View>
 
 					<View className="sub-copy">
@@ -102,7 +95,7 @@ const SubscriptionCard = ({
 				</View>
 
 				<View className="sub-price-box">
-					<Text className="sub-price">{formatCurrency(price, currency)}</Text>
+					<Text className="sub-price">{formatCurrency(price, defaultCurrency)}</Text>
 					<Text className="sub-billing">{billing}</Text>
 				</View>
 			</View>
@@ -179,6 +172,52 @@ const SubscriptionCard = ({
 							</View>
 						</View>
 					</View>
+
+					{(showDetailsButton || onStatusTogglePress || onDeletePress) && (
+						<View
+							className="flex-row gap-3 mt-4 border-t pt-4"
+							style={{ borderTopColor: "rgba(0, 0, 0, 0.08)" }}
+						>
+							{showDetailsButton && (
+								<Pressable
+									className="flex-1 items-center justify-center rounded-xl border border-primary/20 bg-black/5 py-3"
+									style={({ pressed }) => pressed && { opacity: 0.8 }}
+									onPress={(e) => {
+										e.stopPropagation();
+										router.push(`/subscriptions/${id}`);
+									}}
+								>
+									<Text className="text-sm font-sans-bold text-primary">Details</Text>
+								</Pressable>
+							)}
+							{onStatusTogglePress && (
+								<Pressable
+									className="flex-1 items-center justify-center rounded-xl border border-primary/20 bg-black/5 py-3"
+									style={({ pressed }) => pressed && { opacity: 0.8 }}
+									onPress={(e) => {
+										e.stopPropagation();
+										onStatusTogglePress();
+									}}
+								>
+									<Text className="text-sm font-sans-bold text-primary">
+										{status === "paused" ? "Resume" : "Pause"}
+									</Text>
+								</Pressable>
+							)}
+							{onDeletePress && (
+								<Pressable
+									className="flex-1 items-center justify-center rounded-xl bg-destructive py-3"
+									style={({ pressed }) => pressed && { opacity: 0.8 }}
+									onPress={(e) => {
+										e.stopPropagation();
+										onDeletePress();
+									}}
+								>
+									<Text className="text-sm font-sans-bold text-white">Cancel</Text>
+								</Pressable>
+							)}
+						</View>
+					)}
 				</View>
 			)}
 		</Pressable>
