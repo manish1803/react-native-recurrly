@@ -111,21 +111,22 @@ const Insights = () => {
 
 	// Calculate segments with colors and offsets
 	let accumulatedOffset = 0;
-	const segments = chartData.map((item: any) => {
+	const segments = [];
+	for (const item of chartData) {
 		const percentage = hasActiveSpend ? item.value / totalMonthlySpend : 0;
 		const length = percentage * circumference;
 		const offset = -accumulatedOffset;
 		accumulatedOffset += length;
 		const color = CATEGORY_COLORS[item.label] || CATEGORY_COLORS["Other"];
 
-		return {
+		segments.push({
 			...item,
 			percentage,
 			length,
 			offset,
 			color,
-		};
-	});
+		});
+	}
 
 	return (
 		<SafeAreaView className="flex-1 bg-background">

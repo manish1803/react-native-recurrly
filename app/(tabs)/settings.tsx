@@ -7,6 +7,9 @@ import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { clsx } from "clsx";
 import dayjs from "dayjs";
 
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+import { colors } from "@/constants/theme";
 import { useSubscriptions } from "@/context/subscriptions";
 import Divider from "@/components/settings/Divider";
 import InfoRow from "@/components/settings/InfoRow";
@@ -168,13 +171,13 @@ const Settings = () => {
 				{/* ── Account details ── */}
 				<SectionLabel title="Account" />
 				<View className="mb-6 overflow-hidden rounded-2xl border border-border bg-card">
-					<InfoRow label="Full name" value={displayName} />
+					<InfoRow label="Full name" value={displayName} icon={<Ionicons name="person-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="Email" value={email} />
+					<InfoRow label="Email" value={email} icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="Member since" value={memberSince} />
+					<InfoRow label="Member since" value={memberSince} icon={<Ionicons name="calendar-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="User ID" value={userId} />
+					<InfoRow label="User ID" value={userId} icon={<Ionicons name="finger-print-outline" size={18} color={colors.primary} />} />
 				</View>
 
 				{/* ── Preferences ── */}
@@ -184,12 +187,12 @@ const Settings = () => {
 						onPress={() => setShowCurrencyPicker(true)}
 						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
 					>
-						<InfoRow label="Currency" value={defaultCurrency} showArrow />
+						<InfoRow label="Currency" value={defaultCurrency} showArrow icon={<Ionicons name="cash-outline" size={18} color={colors.primary} />} />
 					</Pressable>
 					<Divider />
-					<InfoRow label="Notifications" value="Enabled" />
+					<InfoRow label="Notifications" value="Enabled" icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />} />
 					<Divider />
-					<InfoRow label="App version" value="1.0.0" />
+					<InfoRow label="App version" value="1.0.0" icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />} />
 				</View>
 
 				{/* ── Support & Feedback ── */}
@@ -199,14 +202,14 @@ const Settings = () => {
 						onPress={handleReportBug}
 						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
 					>
-						<InfoRow label="Report a bug" value="" showArrow />
+						<InfoRow label="Report a bug" value="" showArrow icon={<Ionicons name="bug-outline" size={18} color={colors.primary} />} />
 					</Pressable>
 					<Divider />
 					<Pressable
 						onPress={handleRateApp}
 						style={({ pressed }) => pressed && { backgroundColor: "rgba(0,0,0,0.05)" }}
 					>
-						<InfoRow label="Rate this app" value="" showArrow />
+						<InfoRow label="Rate this app" value="" showArrow icon={<Ionicons name="star-outline" size={18} color={colors.primary} />} />
 					</Pressable>
 				</View>
 

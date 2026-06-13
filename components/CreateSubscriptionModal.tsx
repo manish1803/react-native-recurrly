@@ -218,7 +218,7 @@ const CreateSubscriptionModal = ({
 				style={styles.overlay}
 				behavior={Platform.OS === "ios" ? "padding" : undefined}
 			>
-				<Pressable style={StyleSheet.absoluteFillObject} onPress={handleClose} />
+				<Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
 
 				<View className="modal-container">
 					{/* ── Header ── */}

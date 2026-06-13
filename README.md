@@ -1,26 +1,28 @@
 # Recurrly Mobile App
 
-Vibrant, premium, glassmorphic React Native mobile application built on Expo SDK 54, integrated with Clerk for authentication and PostHog for real-time engagement analytics. The app connects to the Recurrly Node.js REST backend.
+A vibrant, premium, and glassmorphic React Native mobile application built on Expo SDK 54. Recurrly helps users track, manage, and analyze recurring subscriptions with fluid micro-animations, unified brand iconography, and Clerk-managed multi-factor authentication.
 
 ---
 
-## Features
+## Key Features
 
-- **Dashboard / Spend Overview**: Beautiful metallic shimmer credit card interface summarizing total monthly spend and active subscription count.
-- **Service Auto-Discovery**: Smart modal matching popular brands (Netflix, Spotify, GitHub, Claude, etc.) to their official brand logos via CDN logos or local bundled icons.
-- **Detailed Insights**: High-performance SVG Donut Charts visually aggregating monthly spends by categories.
-- **Subscriptions List & Filtering**: Clean, responsive layout to search and sort subscriptions by categories.
-- **Detailed Settings**: Manage multi-tenant profiles, configure default currencies, rate the app, or delete all subscription data.
+- **Spend Overview Dashboard**: Features a premium, credit-card styled metallic shimmer interface detailing total monthly spends and active subscription counts.
+- **Dynamic Brand Logo Engine**: Unified icon renderer (`ServiceIcon`) utilizing a logo.dev API with automatic CDN fallbacks (Simple Icons jsDelivr) and deterministic, colored initial-letter avatars.
+- **Detailed Insights Page**: Leverages custom animated SVG donut charts to visually categorize monthly spends, accompanied by case-insensitive subscription billing intervals.
+- **Adaptive Details Page**: Clean subscription profiles with custom loading screens and detailed NotFound/404 views.
+- **Multi-Currency Selection**: Custom CurrencyPickerModal supporting regional preferences including USD ($), EUR (€), GBP (£), INR (₹), CAD (C$), AUD (A$), and JPY (¥).
+- **Onboarding Experience**: Smooth onboarding layout that logs initial user engagement exactly once on landing.
+- **Robust API Client**: Pre-configured HTTP module featuring request abort-timeout handlers (10s) and safe JSON parsing for 204/empty response bodies.
 
 ---
 
-## Tech Stack & Design System
+## Tech Stack & Architecture
 
 - **Framework**: [Expo SDK 54](https://expo.dev/) (React Native) with file-based routing via `expo-router`.
-- **Styling**: Vanilla Tailwind CSS integrated via [NativeWind v4](https://www.nativewind.dev/).
-- **Animations**: Fluid layouts, split grids, and metallic shimmer reflection effects built with [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/).
-- **Auth Layer**: [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview) supporting Google OAuth and password/MFA email verification.
-- **Analytics**: [PostHog React Native SDK](https://posthog.com/docs/libraries/react-native) tracking screens, button interactions, subscription creation, status toggles, and deletion events.
+- **Styling**: Vanilla Tailwind CSS integrated via [NativeWind v5](https://www.nativewind.dev/) (css-in-js styling paradigm).
+- **Animations**: Timed splash scaling, opacity animations, and metallic reflections built with [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/).
+- **Authentication**: [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview) supporting Google OAuth SSO and secure password/MFA email verification.
+- **Analytics**: [PostHog React Native SDK](https://posthog.com/docs/libraries/react-native) tracking user navigation, subscription CRUD logs, status toggles, and detail views without distinct ID fragmentation.
 
 ---
 
@@ -29,12 +31,12 @@ Vibrant, premium, glassmorphic React Native mobile application built on Expo SDK
 ### Prerequisites
 
 - **Node.js**: v18.0.0 or higher
-- **Package Manager**: npm (or yarn/pnpm)
-- **Expo Go** app installed on your physical device (iOS or Android), or an active simulator.
+- **Package Manager**: npm
+- **Expo Go** app installed on your physical device, or an active simulator.
 
 ### Installation
 
-1. Install dependencies:
+1. Install application dependencies:
    ```bash
    npm install
    ```
@@ -49,9 +51,19 @@ Vibrant, premium, glassmorphic React Native mobile application built on Expo SDK
    EXPO_PUBLIC_LOGO_DEV_TOKEN="pk_..."
    ```
 
-3. Launch Metro Bundler:
+3. Validate the environment and compile code:
+   Ensure all TypeScript declarations and styling parameters are properly compiled:
    ```bash
-   npx expo start
+   # Run type-checking
+   npx tsc --noEmit
+
+   # Run ESLint validation
+   npm run lint
    ```
 
-4. Press `i` to launch iOS Simulator, `a` for Android Emulator, or scan the QR code using your phone's camera (iOS) or the Expo Go app (Android).
+4. Launch the Metro Bundler:
+   ```bash
+   npx expo start -c
+   ```
+
+5. Press `i` to launch iOS Simulator, `a` for Android Emulator, or scan the QR code using your phone's camera (iOS) or the Expo Go app (Android).

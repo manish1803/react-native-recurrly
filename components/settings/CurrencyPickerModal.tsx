@@ -26,7 +26,7 @@ export default function CurrencyPickerModal({
 			statusBarTranslucent
 		>
 			<View style={styles.overlay}>
-				<Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 				<View className="modal-container">
 					<View className="modal-header">
 						<Text className="modal-title">Select Currency</Text>

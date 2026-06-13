@@ -169,6 +169,7 @@ declare global {
 		label: string;
 		value: string;
 		showArrow?: boolean;
+		icon?: ReactNode;
 	}
 
 	interface CurrencyPickerModalProps {
@@ -195,7 +196,7 @@ declare global {
 		upcoming: UpcomingSubscription[];
 		insights: {
 			totalMonthlySpend: number;
-			chartData: Array<{ day: string; value: number; highlight: boolean }>;
+			chartData: Array<{ label: string; value: number }>;
 			history: any[];
 		} | null;
 		loading: boolean;
