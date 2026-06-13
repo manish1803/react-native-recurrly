@@ -1,4 +1,4 @@
-import { useSignUp, useSSO } from "@clerk/expo";
+import { useSignUp, useSSO, useClerk } from "@clerk/expo";
 import { Link } from "expo-router";
 import { useState, useCallback } from "react";
 import { usePostHog } from "posthog-react-native";
@@ -37,6 +37,7 @@ const validateConfirmPassword = (
 
 export default function SignUp() {
 	const { signUp, errors, fetchStatus } = useSignUp();
+	const clerk = useClerk();
 	const posthog = usePostHog();
 	const { startSSOFlow } = useSSO();
 
@@ -49,12 +50,19 @@ export default function SignUp() {
 
 			if (createdSessionId && setActive) {
 				await setActive({ session: createdSessionId });
+				const session = clerk.client.sessions.find((s) => s.id === createdSessionId);
+				const userId = session?.user?.id || createdSessionId;
+				const userEmail = session?.user?.primaryEmailAddress?.emailAddress || "";
+				posthog.identify(userId, {
+					$set: { email: userEmail },
+					$set_once: { first_sign_up_date: new Date().toISOString() },
+				});
 				posthog.capture("user_signed_up", { method: "google" });
 			}
 		} catch (err) {
 			console.error("OAuth error:", err);
 		}
-	}, [startSSOFlow, posthog]);
+	}, [startSSOFlow, posthog, clerk.client.sessions]);
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -132,7 +140,7 @@ export default function SignUp() {
 			const userId = signUp.createdUserId ?? email.trim();
 			posthog.identify(userId, {
 				$set: { email: email.trim() },
-				$set_once: { sign_up_date: new Date().toISOString() },
+				$set_once: { first_sign_up_date: new Date().toISOString() },
 			});
 			posthog.capture("user_signed_up", { method: "email" });
 		} else {

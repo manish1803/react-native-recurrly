@@ -55,7 +55,7 @@ const Settings = () => {
 					text: "Email Support",
 					onPress: () => {
 						posthog?.capture("report_bug_clicked");
-						Alert.alert("Support Ticket Logged", "Our support email is support@recurrly.com. We've logged this report and will reach out to you!");
+						Alert.alert("Report Logged", "Thanks — we've recorded your report. If you need help, please email support@recurrly.com.");
 					},
 				},
 			]

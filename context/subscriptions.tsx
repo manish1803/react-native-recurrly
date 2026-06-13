@@ -34,6 +34,7 @@ export function mapBackendSubscription(sub: any): Subscription {
 		startDate: sub.startDate,
 		renewalDate: sub.renewalDate,
 		color: sub.color || undefined,
+		serviceKey: sub.serviceKey || undefined,
 		icon,
 		iconInitial,
 	};

@@ -281,7 +281,7 @@ const Insights = () => {
 									</View>
 									<View className="sub-price-box">
 										<Text className="sub-price">{formatCurrency(item.price, item.currency)}</Text>
-										<Text className="sub-billing">per {item.billing === "Yearly" ? "year" : "month"}</Text>
+										<Text className="sub-billing">per {String(item.billing || "").toLowerCase() === "yearly" ? "year" : "month"}</Text>
 									</View>
 								</View>
 							</View>

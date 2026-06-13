@@ -10,7 +10,8 @@ const Onboarding = () => {
 
 	useEffect(() => {
 		posthog.capture("onboarding_viewed");
-	}, [posthog]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleGetStarted = () => {
 		posthog.capture("onboarding_get_started_clicked");

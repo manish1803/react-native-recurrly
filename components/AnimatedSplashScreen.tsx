@@ -45,7 +45,8 @@ export default function AnimatedSplashScreen({ onAnimationComplete }: AnimatedSp
 				}
 			})
 		);
-	}, [logoOpacity, logoScale, onAnimationComplete, opacity]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [onAnimationComplete]);
 
 	const containerStyle = useAnimatedStyle(() => ({
 		opacity: opacity.value,

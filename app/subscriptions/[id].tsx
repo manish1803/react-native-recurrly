@@ -16,7 +16,7 @@ const SubscriptionDetails = () => {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const posthog = usePostHog();
-	const { subscriptions, updateSubscription, deleteSubscription, defaultCurrency } = useSubscriptions();
+	const { subscriptions, updateSubscription, deleteSubscription, defaultCurrency, loading } = useSubscriptions();
 
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -31,11 +31,29 @@ const SubscriptionDetails = () => {
 		}
 	}, [id, posthog]);
 
-	if (!sub) {
+	if (loading) {
 		return (
 			<SafeAreaView className="flex-1 bg-background justify-center items-center p-5">
 				<ActivityIndicator size="large" color="#ea7a53" />
 				<Text className="mt-4 text-primary font-sans-medium">Loading subscription details...</Text>
+			</SafeAreaView>
+		);
+	}
+
+	if (!sub) {
+		return (
+			<SafeAreaView className="flex-1 bg-background justify-center items-center p-5">
+				<Text className="text-xl font-sans-bold text-destructive mb-2">Subscription Not Found</Text>
+				<Text className="text-center font-sans-medium text-muted-foreground mb-6">
+					The subscription details could not be loaded. It may have been deleted or is invalid.
+				</Text>
+				<Pressable
+					className="items-center rounded-2xl bg-primary px-6 py-4"
+					style={({ pressed }) => pressed && { opacity: 0.9 }}
+					onPress={() => router.replace("/(tabs)")}
+				>
+					<Text className="text-base font-sans-bold text-white">Back to Home</Text>
+				</Pressable>
 			</SafeAreaView>
 		);
 	}

@@ -16,6 +16,7 @@ const normalise = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 function getDomain(name: string): string {
 	const key = normalise(name);
+	if (key === "") return "";
 	if (SERVICE_DOMAIN_MAP[key]) return SERVICE_DOMAIN_MAP[key];
 
 	for (const [k, domain] of Object.entries(SERVICE_DOMAIN_MAP)) {
@@ -32,8 +33,10 @@ function getDomain(name: string): string {
 export function resolveServiceLogo(name: string): ImageSourcePropType | null {
 	if (!name.trim()) return null;
 
-	const domain = getDomain(name);
 	const key = normalise(name);
+	if (key === "") return null;
+
+	const domain = getDomain(name);
 
 	let simpleIconSlug = SERVICE_SLUG_MAP[key];
 	if (!simpleIconSlug) {
