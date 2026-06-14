@@ -101,25 +101,7 @@ export function parseClerkError(err: any): {
 		general?: string;
 	} = {};
 
-	if (err && err.clerkError && Array.isArray(err.errors)) {
-		err.errors.forEach((e: any) => {
-			const param = e.meta?.paramName;
-			const msg = e.longMessage || e.message;
-			if (param === "password") {
-				errors.password = msg;
-			} else if (
-				param === "email_address" ||
-				param === "emailAddress" ||
-				param === "identifier"
-			) {
-				errors.email = msg;
-			} else if (param === "code") {
-				errors.code = msg;
-			} else {
-				errors.general = msg;
-			}
-		});
-	} else if (err && Array.isArray(err.errors)) {
+	if (err && Array.isArray(err.errors)) {
 		err.errors.forEach((e: any) => {
 			const param = e.meta?.paramName;
 			const msg = e.longMessage || e.message;
