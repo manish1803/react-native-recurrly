@@ -83,4 +83,67 @@ export function hexToRGBA(hex: string, alpha: number): string {
 	return hex;
 }
 
+/**
+ * Parses Clerk error objects and maps them to standard field error keys.
+ */
+export function parseClerkError(err: any): {
+	email?: string;
+	password?: string;
+	confirmPassword?: string;
+	code?: string;
+	general?: string;
+} {
+	const errors: {
+		email?: string;
+		password?: string;
+		confirmPassword?: string;
+		code?: string;
+		general?: string;
+	} = {};
 
+	if (err && err.clerkError && Array.isArray(err.errors)) {
+		err.errors.forEach((e: any) => {
+			const param = e.meta?.paramName;
+			const msg = e.longMessage || e.message;
+			if (param === "password") {
+				errors.password = msg;
+			} else if (
+				param === "email_address" ||
+				param === "emailAddress" ||
+				param === "identifier"
+			) {
+				errors.email = msg;
+			} else if (param === "code") {
+				errors.code = msg;
+			} else {
+				errors.general = msg;
+			}
+		});
+	} else if (err && Array.isArray(err.errors)) {
+		err.errors.forEach((e: any) => {
+			const param = e.meta?.paramName;
+			const msg = e.longMessage || e.message;
+			if (param === "password") {
+				errors.password = msg;
+			} else if (
+				param === "email_address" ||
+				param === "emailAddress" ||
+				param === "identifier"
+			) {
+				errors.email = msg;
+			} else if (param === "code") {
+				errors.code = msg;
+			} else {
+				errors.general = msg;
+			}
+		});
+	} else if (err && typeof err === "object" && err.message) {
+		errors.general = err.message;
+	} else if (typeof err === "string") {
+		errors.general = err;
+	} else {
+		errors.general = "An unexpected error occurred. Please try again.";
+	}
+
+	return errors;
+}
