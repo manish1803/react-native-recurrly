@@ -1,24 +1,25 @@
 export default {
   expo: {
-    name: "react_native_recurrly",
-    slug: "react_native_recurrly",
+    name: "Recurrly",
+    slug: "recurrly",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "reactnativerecurrly",
+    scheme: "recurly",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
+      bundleIdentifier: "com.merlin.recurrly",
       supportsTablet: true,
     },
     android: {
+      package: "com.merlin.recurrly",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
     web: {
