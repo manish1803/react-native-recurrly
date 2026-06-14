@@ -1,6 +1,8 @@
 # Recurrly Mobile App
 
-A vibrant, premium, and glassmorphic React Native mobile application built on Expo SDK 54. Recurrly helps users track, manage, and analyze recurring subscriptions with fluid micro-animations, unified brand iconography, and Clerk-managed multi-factor authentication.
+![Recurrly App Thumbnail](./assets/images/thumbnail.png)
+
+A vibrant, premium, and glassmorphic React Native mobile application built on Expo SDK 56. Recurrly helps users track, manage, and analyze recurring subscriptions with fluid micro-animations, unified brand iconography, and Clerk-managed multi-factor authentication.
 
 ---
 
@@ -18,7 +20,7 @@ A vibrant, premium, and glassmorphic React Native mobile application built on Ex
 
 ## Tech Stack & Architecture
 
-- **Framework**: [Expo SDK 54](https://expo.dev/) (React Native) with file-based routing via `expo-router`.
+- **Framework**: [Expo SDK 56](https://expo.dev/) (React Native) with file-based routing via `expo-router`.
 - **Styling**: Vanilla Tailwind CSS integrated via [NativeWind v5](https://www.nativewind.dev/) (css-in-js styling paradigm).
 - **Animations**: Timed splash scaling, opacity animations, and metallic reflections built with [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/).
 - **Authentication**: [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview) supporting Google OAuth SSO and secure password/MFA email verification.
@@ -61,9 +63,12 @@ A vibrant, premium, and glassmorphic React Native mobile application built on Ex
    npm run lint
    ```
 
-4. Launch the Metro Bundler:
+4. Launch the Application:
+   Depending on your target emulator/device, execute one of the following commands:
    ```bash
-   npx expo start -c
-   ```
+   # Run on iOS Simulator/Device
+   npm run ios
 
-5. Press `i` to launch iOS Simulator, `a` for Android Emulator, or scan the QR code using your phone's camera (iOS) or the Expo Go app (Android).
+   # Run on Android Emulator/Device
+   npm run android
+   ```

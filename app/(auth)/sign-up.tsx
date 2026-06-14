@@ -12,6 +12,7 @@ import AuthField from "@/components/auth/AuthField";
 import AuthScreen from "@/components/auth/AuthScreen";
 import LogoBrand from "@/components/auth/LogoBrand";
 import GoogleIcon from "@/components/icons/GoogleIcon";
+import { parseClerkError } from "@/lib/utils";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -41,6 +42,18 @@ export default function SignUp() {
 	const posthog = usePostHog();
 	const { startSSOFlow } = useSSO();
 
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [code, setCode] = useState("");
+	const [fieldErrors, setFieldErrors] = useState<{
+		email?: string;
+		password?: string;
+		confirmPassword?: string;
+		code?: string;
+		general?: string;
+	}>({});
+
 	const handleGoogleSignUp = useCallback(async () => {
 		try {
 			const { createdSessionId, setActive } = await startSSOFlow({
@@ -61,19 +74,9 @@ export default function SignUp() {
 			}
 		} catch (err) {
 			console.error("OAuth error:", err);
+			setFieldErrors(parseClerkError(err));
 		}
 	}, [startSSOFlow, posthog, clerk.client.sessions]);
-
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [code, setCode] = useState("");
-	const [fieldErrors, setFieldErrors] = useState<{
-		email?: string;
-		password?: string;
-		confirmPassword?: string;
-		code?: string;
-	}>({});
 
 	const isLoading = fetchStatus === "fetching";
 
@@ -101,6 +104,7 @@ export default function SignUp() {
 
 		if (error) {
 			console.error("Sign-up error:", JSON.stringify(error, null, 2));
+			setFieldErrors(parseClerkError(error));
 			return;
 		}
 
@@ -109,6 +113,7 @@ export default function SignUp() {
 			const { error: verifyError } = await signUp.verifications.sendEmailCode();
 			if (verifyError) {
 				console.error("Email verification send error:", JSON.stringify(verifyError, null, 2));
+				setFieldErrors(parseClerkError(verifyError));
 			}
 		}
 	};
@@ -124,6 +129,7 @@ export default function SignUp() {
 		const { error } = await signUp.verifications.verifyEmailCode({ code });
 		if (error) {
 			console.error("Email verify error:", JSON.stringify(error, null, 2));
+			setFieldErrors(parseClerkError(error));
 			return;
 		}
 
@@ -169,6 +175,13 @@ export default function SignUp() {
 
 				<AuthCard>
 					<View className="auth-form">
+						{fieldErrors.general && (
+							<View className="mb-2 p-4 rounded-2xl bg-destructive/10 border border-destructive/20">
+								<Text className="text-sm font-sans-semibold text-destructive text-center">
+									{fieldErrors.general}
+								</Text>
+							</View>
+						)}
 						<AuthField
 							label="Verification code"
 							placeholder="Enter 6-digit code"
@@ -224,6 +237,13 @@ export default function SignUp() {
 
 			<AuthCard>
 				<View className="auth-form">
+					{fieldErrors.general && (
+						<View className="mb-2 p-4 rounded-2xl bg-destructive/10 border border-destructive/20">
+							<Text className="text-sm font-sans-semibold text-destructive text-center">
+								{fieldErrors.general}
+							</Text>
+						</View>
+					)}
 					<AuthField
 						label="Email"
 						placeholder="Enter your email"

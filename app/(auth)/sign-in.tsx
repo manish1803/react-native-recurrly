@@ -12,6 +12,7 @@ import AuthField from "@/components/auth/AuthField";
 import AuthScreen from "@/components/auth/AuthScreen";
 import GoogleIcon from "@/components/icons/GoogleIcon";
 import LogoBrand from "@/components/auth/LogoBrand";
+import { parseClerkError } from "@/lib/utils";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -34,6 +35,16 @@ export default function SignIn() {
 	const posthog = usePostHog();
 	const { startSSOFlow } = useSSO();
 
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [code, setCode] = useState("");
+	const [fieldErrors, setFieldErrors] = useState<{
+		email?: string;
+		password?: string;
+		code?: string;
+		general?: string;
+	}>({});
+
 	const handleGoogleSignIn = useCallback(async () => {
 		try {
 			const { createdSessionId, setActive } = await startSSOFlow({
@@ -54,18 +65,9 @@ export default function SignIn() {
 			}
 		} catch (err) {
 			console.error("OAuth error:", err);
+			setFieldErrors(parseClerkError(err));
 		}
 	}, [startSSOFlow, posthog, clerk.client.sessions]);
-
-
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [code, setCode] = useState("");
-	const [fieldErrors, setFieldErrors] = useState<{
-		email?: string;
-		password?: string;
-		code?: string;
-	}>({});
 
 	const isLoading = fetchStatus === "fetching";
 
@@ -88,6 +90,7 @@ export default function SignIn() {
 
 		if (error) {
 			console.error("Sign-in error:", JSON.stringify(error, null, 2));
+			setFieldErrors(parseClerkError(error));
 			return;
 		}
 
@@ -105,6 +108,7 @@ export default function SignIn() {
 				const { error: mfaError } = await signIn.mfa.sendEmailCode();
 				if (mfaError) {
 					console.error("Error sending MFA code: ", JSON.stringify(mfaError, null, 2));
+					setFieldErrors(parseClerkError(mfaError));
 				}
 			}
 		}
@@ -121,6 +125,7 @@ export default function SignIn() {
 		const { error } = await signIn.mfa.verifyEmailCode({ code });
 		if (error) {
 			console.error("Error verifying MFA code: ", JSON.stringify(error, null, 2));
+			setFieldErrors(parseClerkError(error));
 			return;
 		}
 
@@ -172,6 +177,13 @@ export default function SignIn() {
 
 				<AuthCard>
 					<View className="auth-form">
+						{fieldErrors.general && (
+							<View className="mb-2 p-4 rounded-2xl bg-destructive/10 border border-destructive/20">
+								<Text className="text-sm font-sans-semibold text-destructive text-center">
+									{fieldErrors.general}
+								</Text>
+							</View>
+						)}
 						<AuthField
 							label="Verification code"
 							placeholder="Enter 6-digit code"
@@ -225,6 +237,13 @@ export default function SignIn() {
 
 			<AuthCard>
 				<View className="auth-form">
+					{fieldErrors.general && (
+						<View className="mb-2 p-4 rounded-2xl bg-destructive/10 border border-destructive/20">
+							<Text className="text-sm font-sans-semibold text-destructive text-center">
+								{fieldErrors.general}
+							</Text>
+						</View>
+					)}
 					<AuthField
 						label="Email"
 						placeholder="Enter your email"
